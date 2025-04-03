@@ -321,6 +321,13 @@ public class Require extends BaseFunction {
         executionScope.put("exports", executionScope, exports);
         executionScope.put("module", executionScope, moduleObject);
         moduleObject.put("exports", moduleObject, exports);
+
+        String filename = uri != null ? uri.getSchemeSpecificPart() : "";
+        int lastSlash = filename.lastIndexOf('/');
+        String dirname = lastSlash == -1 ? filename : filename.substring(0, lastSlash);
+        executionScope.put("__filename", executionScope, filename);
+        executionScope.put("__dirname", executionScope, dirname);
+
         install(executionScope);
         if (isMain) {
             defineReadOnlyProperty(this, "main", moduleObject);

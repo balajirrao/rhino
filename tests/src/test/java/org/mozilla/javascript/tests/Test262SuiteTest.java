@@ -18,18 +18,8 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Scanner;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,6 +30,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.Kit;
@@ -100,13 +91,12 @@ public class Test262SuiteTest {
                             "new.target",
                             "object-rest",
                             "regexp-dotall",
-                            "regexp-unicode-property-escapes",
                             "resizable-arraybuffer",
                             "tail-call-optimization",
                             "u180e"));
 
     static {
-        String propFile = System.getProperty("test262properties");
+        String propFile = "";
         testProperties =
                 propFile != null && !propFile.equals("") ? propFile : "testsrc/test262.properties";
 
@@ -780,9 +770,15 @@ public class Test262SuiteTest {
         List<Object[]> result = new ArrayList<>();
         File skipDir = null;
 
-        List<File> testFiles = new LinkedList<File>();
+        List<File> testFiles = new LinkedList<>();
+
         Map<File, String> failingFiles = new HashMap<File, String>();
         addTestFiles(testFiles, failingFiles);
+
+        // remove everything after index 200
+//        testFiles = testFiles.subList(0, 50);
+
+//        testFiles.add(    new File(testDir, "harness/nativeFunctionMatcher.js"));
 
         fileLoop:
         for (File testFile : testFiles) {

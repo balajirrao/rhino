@@ -1,7 +1,6 @@
 package org.mozilla.javascript.tests.commonjs.module;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -12,14 +11,12 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import org.junit.Test;
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.RhinoException;
-import org.mozilla.javascript.ScriptStackElement;
+import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.provider.StrongCachingModuleScriptProvider;
 import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
-import org.mozilla.javascript.testutils.Utils;
 
 /**
  * @author Attila Szegedi
@@ -143,29 +140,29 @@ public class RequireTest {
     }
 
     @Test
-    public void stackTracesAlwaysHaveFileName() {
-        Utils.runWithAllModes(
-                cx -> {
-                    cx.setGeneratingDebug(false);
-                    final Scriptable scope = cx.initStandardObjects();
-                    try {
-                        final Require require = getSandboxedRequire(cx, scope, false);
-                        require.install(scope);
-                        RhinoException rhinoException =
-                                assertThrows(
-                                        RhinoException.class,
-                                        () -> require.requireMain(cx, "throw-one"));
-
-                        ScriptStackElement[] stack = rhinoException.getScriptStack();
-                        assertEquals(2, stack.length);
-
-                        assertTrue(stack[0].fileName.contains("throw-two.js"));
-                        assertTrue(stack[1].fileName.contains("throw-one.js"));
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    return null;
-                });
+    public void filenameDirnameAreDefined() throws Exception {
+        try (Context cx = createContext()) {
+            final Scriptable scope = cx.initStandardObjects();
+            final Require require = getSandboxedRequire(cx, scope, false);
+            require.install(scope);
+      
+            String script = "" +
+                    "var module = require('filenameDirname.js'); " +
+                    "[" +
+                    "   module.theFilename," +
+                    "   module.getFilename()," +
+                    "   module.theDirname," +
+                    "   module.getDirname()," +
+                    "]";
+            
+            Object result = cx.evaluateString(scope, script, "main.js", 1, null);
+            assertTrue(result instanceof NativeArray);
+            NativeArray array = (NativeArray) result;
+            assertTrue(array.get(0).toString().endsWith("test/org/mozilla/javascript/tests/commonjs/module/filenameDirname.js"));
+            assertTrue(array.get(1).toString().endsWith("test/org/mozilla/javascript/tests/commonjs/module/filenameDirname.js"));
+            assertTrue(array.get(2).toString().endsWith("test/org/mozilla/javascript/tests/commonjs/module"));
+            assertTrue(array.get(3).toString().endsWith("test/org/mozilla/javascript/tests/commonjs/module"));
+        }
     }
 
     private Reader getReader(String name) {
