@@ -956,7 +956,7 @@ final class NativeString extends ScriptableObject {
                                     });
             replacement = ScriptRuntime.toString(replacementObj);
         } else {
-            NativeArray captures = (NativeArray) cx.newArray(scope, 0);
+            List<Object> captures = List.of();
             replacement =
                     AbstractEcmaStringOperations.getSubstitution(
                             cx,
@@ -1048,7 +1048,7 @@ final class NativeString extends ScriptableObject {
                                         });
                 replacement = ScriptRuntime.toString(replacementObj);
             } else {
-                NativeArray captures = (NativeArray) cx.newArray(scope, 0);
+                List<Object> captures = List.of();
                 replacement =
                         AbstractEcmaStringOperations.getSubstitution(
                                 cx,
