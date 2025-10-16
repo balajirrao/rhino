@@ -1129,4 +1129,12 @@ public class NativeRegExpTest {
                 "\uD806\uDE45",
                 "'\\u{11A45}'.match(/\\p{sc=Zanabazar_Square}/u)[0]");
     }
+
+    @Test
+    public void testUnicodeCaseInsensitiveWordCharacter() {
+        Utils.assertWithAllModes_ES6(
+                "Zanabazar Square",
+                "Kİ",
+                "'\\u{212A}\\u{0130}'.match(/\\w+/ui)[0]");
+    }
 }
