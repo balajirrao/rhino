@@ -2657,7 +2657,6 @@ public class NativeRegExp extends IdScriptableObject {
             processCharSet(gData, charSet);
         }
 
-
         if ((gData.regexp.flags & JSREG_UNICODE) != 0 && (gData.regexp.flags & JSREG_FOLD) != 0) {
             codePoint = unicodeCaseFold(codePoint);
         }
@@ -2680,11 +2679,13 @@ public class NativeRegExp extends IdScriptableObject {
         }
 
         for (int encodedProp : charSet.unicodeProps) {
-            if (UnicodeProperties.hasProperty(encodedProp, codePoint))
+            if (UnicodeProperties.hasProperty(
+                    encodedProp, codePoint, (gData.regexp.flags & JSREG_FOLD) != 0))
                 return charSet.classContents.sense;
         }
         for (int encodedProp : charSet.negUnicodeProps) {
-            if (!UnicodeProperties.hasProperty(encodedProp, codePoint))
+            if (!UnicodeProperties.hasProperty(
+                    encodedProp, codePoint, (gData.regexp.flags & JSREG_FOLD) != 0))
                 return charSet.classContents.sense;
         }
         return !charSet.classContents.sense;
