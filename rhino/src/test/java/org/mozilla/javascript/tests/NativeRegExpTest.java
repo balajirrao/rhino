@@ -1204,4 +1204,29 @@ public class NativeRegExpTest {
                         + "/^[^Kİ]$/ui.test('İ') + '-' + "
                         + "/^[^Kİ]$/ui.test('x')");
     }
+
+    @Test
+    public void testUnicodeCaseInsensitiveBackreference() {
+        // Test backreferences with K (U+212A KELVIN SIGN), İ (U+0130), and DESERET (U+10403)
+        Utils.assertWithAllModes_ES6(
+                "true-true-true-true-true-true-false-false",
+                "/^(K)\\1$/ui.test('Kk') + '-' + "
+                        + "/^(k)\\1$/ui.test('kK') + '-' + "
+                        + "/^(İ)\\1$/ui.test('İi') + '-' + "
+                        + "/^(i)\\1$/ui.test('iİ') + '-' + "
+                        + "/^(\uD801\uDC03)\\1$/ui.test('\uD801\uDC03\uD801\uDC2B') + '-' + "
+                        + "/^(K)(İ)\\1\\2$/ui.test('Kİki') + '-' + "
+                        + "/^(K)\\1$/ui.test('Ka') + '-' + "
+                        + "/^(İ)\\1$/ui.test('İa')");
+    }
+
+    @Test
+    public void testUnicodeCaseInsensitiveBackreferenceInLookbehind() {
+        // Test backreferences with captures inside lookbehind assertions
+        Utils.assertWithAllModes_ES6(
+                "true-true-true",
+                "/(?<=(.))1\\1$/ui.test('K1k') + '-' + "
+                        + "/(?<=(.))1\\1$/ui.test('İ1i') + '-' + "
+                        + "/(?<=(.))1\\1$/ui.test('\uD801\uDC031\uD801\uDC2B')");
+    }
 }
