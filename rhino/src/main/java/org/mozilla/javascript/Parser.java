@@ -2944,6 +2944,15 @@ public class Parser {
                 if (peekToken() == Token.YIELD) {
                     reportError("msg.yield.parenthesized");
                 }
+                if (peekToken() == Token.DOTDOTDOT) {
+                    consumeToken();
+                    var expr = assignExpr();
+                    var spread = new Spread(0, -1); // TODO
+                    spread.setExpression(expr);
+                    result.add(spread);
+                    continue;
+                }
+
                 AstNode en = assignExpr();
                 if (peekToken() == Token.FOR) {
                     try {

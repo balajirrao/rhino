@@ -1161,7 +1161,15 @@ class CodeGenerator<T extends ScriptOrFn<T>> extends Icode {
                     resolveForwardGoto(end);
                     break;
                 }
-
+            case Token.DOTDOTDOT: {
+                addIndexOp(Icode_LITERAL_NEW_ARRAY, 0);
+                addUint8( 0);
+                stackChange(1);
+                visitExpression(child, 0);
+                addIcode(Icode_SPREAD);
+                stackChange(-1);
+                break;
+            }
             default:
                 throw badTree(node);
         }

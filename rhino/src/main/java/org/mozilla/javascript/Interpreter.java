@@ -1732,7 +1732,7 @@ public final class Interpreter extends Icode implements Evaluator {
         instructionObjs[base + Icode_CLOSURE_STMT] = new DoClosureStatement();
         instructionObjs[base + Token.REGEXP] = new DoRegExp();
         instructionObjs[base + Icode_TEMPLATE_LITERAL_CALLSITE] = new DoTemplateLiteralCallSite();
-        instructionObjs[base + Icode_LITERAL_NEW_OBJECT] = new DoLiteralNewObject();
+        instructionObjs[base + Icode_LITERAL_NEW_OBJECT] = new  DoLiteralNewObject();
         instructionObjs[base + Icode_LITERAL_NEW_ARRAY] = new DoLiteralNewArray();
         instructionObjs[base + Icode_LITERAL_SET] = new DoLiteralSet();
         instructionObjs[base + Icode_LITERAL_GETTER] = new DoLiteralGetter();
@@ -3984,7 +3984,22 @@ public final class Interpreter extends Icode implements Evaluator {
             var vars = frame.varSource.stack;
             var varDbls = frame.varSource.sDbl;
             ++state.stackTop;
-            frame.stack[state.stackTop] = vars[state.indexReg];
+            int i = 0;
+            int varsSoFar = 0;
+            for (;i < vars.length; i++) {
+                if (vars[varsSoFar] instanceof NewLiteralStorage) {
+                    if (varsSoFar + ((NewLiteralStorage) vars[varsSoFar]).values.length > state.indexReg) {
+                        frame.stack[state.stackTop] = ((NewLiteralStorage) vars[varsSoFar]).values[state.indexReg - varsSoFar];
+                        break;
+                    } else {
+                        varsSoFar += ((NewLiteralStorage) vars[i]).values.length;
+                    }
+                } else if (state.indexReg == varsSoFar) {
+                    frame.stack[state.stackTop] = vars[varsSoFar];
+                } else {
+                    varsSoFar++;
+                }
+            }
             frame.sDbl[state.stackTop] = varDbls[state.indexReg];
             return null;
         }

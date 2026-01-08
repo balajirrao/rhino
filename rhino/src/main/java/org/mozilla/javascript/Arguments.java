@@ -40,7 +40,16 @@ class Arguments extends ScriptableObject {
         setPrototype(ScriptableObject.getObjectPrototype(parent));
 
         args = activation.originalArgs;
-        lengthObj = Integer.valueOf(args.length);
+        var argsLength = 0;
+
+        for (var a : args) {
+            if (a instanceof NewLiteralStorage)
+                argsLength += ((NewLiteralStorage) a).values.length;
+            else
+                argsLength++;
+        }
+
+        lengthObj = Integer.valueOf(argsLength);
 
         JSFunction f = activation.function;
         calleeObj = f;
@@ -93,8 +102,21 @@ class Arguments extends ScriptableObject {
     }
 
     private Object arg(int index) {
-        if (index < 0 || args.length <= index) return NOT_FOUND;
-        return args[index];
+        int varsSoFar = 0;
+        for (var a: args) {
+            if (a instanceof NewLiteralStorage) {
+                if (varsSoFar + ((NewLiteralStorage) a).values.length > index) {
+                    return ((NewLiteralStorage) a).values[index - varsSoFar];
+                } else {
+                    varsSoFar += ((NewLiteralStorage) a).values.length;
+                }
+            } else if (index == varsSoFar) {
+                return a;
+            } else {
+                varsSoFar++;
+            }
+        }
+        return NOT_FOUND;
     }
 
     // the following helper methods assume that 0 < index < args.length

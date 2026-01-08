@@ -26,8 +26,8 @@ public class Token {
     }
 
     // debug flags
-    public static final boolean printTrees = RhinoConfig.get("rhino.printTrees", false);
-    static boolean printICode = RhinoConfig.get("rhino.printICode", false);
+    public static final boolean printTrees = RhinoConfig.get("rhino.printTrees", true);
+    static boolean printICode = RhinoConfig.get("rhino.printICode", true);
     static boolean printNames = printTrees || printICode;
 
     /** Token types. These values correspond to JSTokenType values in jsscan.c. */

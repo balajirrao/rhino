@@ -13,11 +13,18 @@ import org.mozilla.javascript.testutils.Utils;
 public class ObjectLiteralSpreadTest {
     @Test
     public void testObjectSpreadBasic() {
-        String script =
-                "var obj1 = { a: 1, b: 2 };\n"
-                        + "var obj2 = { ...obj1, c: 3 };\n"
-                        + "obj2.a + obj2.b + obj2.c";
-        Utils.assertWithAllModes_ES6(6, script);
+//        String script = "function fn(a, b) { return a + b; }; var o = [1, 2]; fn(i for(i in function*() { yield 1; yield 2; }));";
+//        String script = "function fn(a, b) { return a + b; }; var o = [1, 2]; var x = 1; var y = 2; fn(...o);";
+        String script = "var source = [3, 4, 5];\n" +
+                "var target;\n" +
+                "\n" +
+                "var callCount = 0;\n" +
+                "\n" +
+                "(function() {\n" +
+                "  callCount = arguments.length;\n" +
+                "}(1, 2, ...target = source));" +
+                "callCount;\n";
+        Utils.assertWithAllModes_ES6(1, script);
     }
 
     @Test
