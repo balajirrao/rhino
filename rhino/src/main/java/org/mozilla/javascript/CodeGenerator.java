@@ -620,11 +620,32 @@ class CodeGenerator<T extends ScriptOrFn<T>> extends Icode {
                             resolveForwardGoto(completeOptionalCallJump.putArgsAndDoCallLabel);
                         }
                     }
+
+                    // Check if any argument is a spread
+                    boolean hasSpread = false;
+                    for (Node arg = child.getNext(); arg != null; arg = arg.getNext()) {
+                        if (arg.getType() == Token.DOTDOTDOT) {
+                            hasSpread = true;
+                            break;
+                        }
+                    }
+
                     int argCount = 0;
                     while ((child = child.getNext()) != null) {
-                        visitExpression(child, 0);
+                        if (hasSpread && child.getType() == Token.DOTDOTDOT) {
+                            // Create storage, spread into it, leave on stack
+                            addIndexOp(Icode_LITERAL_NEW_ARRAY, 0);
+                            addUint8(0); // no skip indexes
+                            stackChange(1);
+                            visitExpression(child.getFirstChild(), 0);
+                            addIcode(Icode_SPREAD);
+                            stackChange(-1);
+                        } else {
+                            visitExpression(child, 0);
+                        }
                         ++argCount;
                     }
+
                     int callType = node.getIntProp(Node.SPECIALCALL_PROP, Node.NON_SPECIALCALL);
                     if (type != Token.REF_CALL && callType != Node.NON_SPECIALCALL) {
                         // embed line number and source filename
@@ -633,7 +654,13 @@ class CodeGenerator<T extends ScriptOrFn<T>> extends Icode {
                         addUint8(type == Token.NEW ? 1 : 0);
                         addUint16(lineNumber & 0xFFFF);
                     } else if (node.getIntProp(Node.SUPER_PROPERTY_ACCESS, 0) == 1) {
-                        addIndexOp(Icode_CALL_ON_SUPER, argCount);
+                        if (hasSpread) {
+                            addIndexOp(Icode_CALL_VARARGS_ON_SUPER, argCount);
+                        } else {
+                            addIndexOp(Icode_CALL_ON_SUPER, argCount);
+                        }
+                    } else if (hasSpread) {
+                        addIndexOp(Icode_CALL_VARARGS, argCount);
                     } else {
                         // Only use the tail call optimization if we're not in a try
                         // or we're not generating debug info (since the

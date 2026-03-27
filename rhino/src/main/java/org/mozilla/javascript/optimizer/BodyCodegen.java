@@ -2905,6 +2905,20 @@ class BodyCodegen {
     }
 
     private void generateCallArgArray(Node node, Node argChild, boolean directCall) {
+        // Check if any argument is a spread
+        boolean hasSpread = false;
+        for (Node arg = argChild; arg != null; arg = arg.getNext()) {
+            if (arg.getType() == Token.DOTDOTDOT) {
+                hasSpread = true;
+                break;
+            }
+        }
+
+        if (hasSpread) {
+            generateCallArgArrayWithSpread(node, argChild, directCall);
+            return;
+        }
+
         int argCount = countArguments(argChild);
         // load array object to set arguments
         if (argCount == 1 && itsOneArgArray >= 0) {
@@ -2959,6 +2973,107 @@ class BodyCodegen {
 
             argChild = argChild.getNext();
         }
+    }
+
+    private void generateCallArgArrayWithSpread(Node node, Node argChild, boolean directCall) {
+        // Count non-spread arguments
+        int nonSpreadCount = 0;
+        for (Node arg = argChild; arg != null; arg = arg.getNext()) {
+            if (arg.getType() != Token.DOTDOTDOT) {
+                nonSpreadCount++;
+            }
+        }
+
+        // Create NewLiteralStorage
+        cfw.addALoad(contextLocal);
+        cfw.addLoadConstant(nonSpreadCount);
+        cfw.addLoadConstant(0); // createKeys = false
+        cfw.addInvoke(
+                ByteCode.INVOKESTATIC,
+                "org/mozilla/javascript/NewLiteralStorage",
+                "create",
+                "(Lorg/mozilla/javascript/Context;IZ)Lorg/mozilla/javascript/NewLiteralStorage;");
+
+        // Process each argument
+        while (argChild != null) {
+            if (argChild.getType() == Token.DOTDOTDOT) {
+                // Handle spread argument
+                // For generators, we need to evaluate the expression first, then
+                // set up the storage call, because yield can happen during evaluation
+                if (!isGenerator) {
+                    cfw.add(ByteCode.DUP);
+                    cfw.addALoad(contextLocal);
+                    cfw.addALoad(variableObjectLocal);
+                }
+                generateExpression(argChild.getFirstChild(), node);
+                if (isGenerator) {
+                    // Store the spread value to temp, then set up the storage call
+                    short tempLocal = getNewWordLocal();
+                    cfw.addAStore(tempLocal);
+                    cfw.add(ByteCode.CHECKCAST, "org/mozilla/javascript/NewLiteralStorage");
+                    cfw.add(ByteCode.DUP);
+                    cfw.addALoad(contextLocal);
+                    cfw.addALoad(variableObjectLocal);
+                    cfw.addALoad(tempLocal);
+                    releaseWordLocal(tempLocal);
+                }
+                cfw.addLoadConstant(0); // sourcePosition not needed for function args
+                cfw.addInvoke(
+                        ByteCode.INVOKEVIRTUAL,
+                        "org/mozilla/javascript/NewLiteralStorage",
+                        "spread",
+                        "(Lorg/mozilla/javascript/Context;"
+                                + "Lorg/mozilla/javascript/Scriptable;"
+                                + "Ljava/lang/Object;"
+                                + "I"
+                                + ")V");
+            } else {
+                // Handle regular argument
+                // For generators, we need to evaluate the expression first
+                if (!isGenerator) {
+                    cfw.add(ByteCode.DUP);
+                }
+
+                // Handle directCall parameter optimization
+                if (!directCall) {
+                    generateExpression(argChild, node);
+                } else {
+                    int dcp_register = nodeIsDirectCallParameter(argChild);
+                    if (dcp_register >= 0) {
+                        dcpLoadAsObject(dcp_register);
+                    } else {
+                        generateExpression(argChild, node);
+                        int childNumberFlag = argChild.getIntProp(Node.ISNUMBER_PROP, -1);
+                        if (childNumberFlag == Node.BOTH) {
+                            addDoubleWrap();
+                        }
+                    }
+                }
+
+                if (isGenerator) {
+                    // Store the value to temp, then set up the storage call
+                    short tempLocal = getNewWordLocal();
+                    cfw.addAStore(tempLocal);
+                    cfw.add(ByteCode.CHECKCAST, "org/mozilla/javascript/NewLiteralStorage");
+                    cfw.add(ByteCode.DUP);
+                    cfw.addALoad(tempLocal);
+                    releaseWordLocal(tempLocal);
+                }
+                cfw.addInvoke(
+                        ByteCode.INVOKEVIRTUAL,
+                        "org/mozilla/javascript/NewLiteralStorage",
+                        "pushValue",
+                        "(Ljava/lang/Object;)V");
+            }
+            argChild = argChild.getNext();
+        }
+
+        // Get the values array from storage
+        cfw.addInvoke(
+                ByteCode.INVOKEVIRTUAL,
+                "org/mozilla/javascript/NewLiteralStorage",
+                "getValues",
+                "()[Ljava/lang/Object;");
     }
 
     /**

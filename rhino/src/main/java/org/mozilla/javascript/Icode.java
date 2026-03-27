@@ -165,8 +165,14 @@ abstract class Icode {
             // spread
             Icode_SPREAD = Icode_DELPROP_SUPER - 1,
 
+            // Call with spread arguments
+            Icode_CALL_VARARGS = Icode_SPREAD - 1,
+
+            // Call a method on the super object with spread arguments
+            Icode_CALL_VARARGS_ON_SUPER = Icode_CALL_VARARGS - 1,
+
             // Last icode
-            MIN_ICODE = Icode_SPREAD;
+            MIN_ICODE = Icode_CALL_VARARGS_ON_SUPER;
 
     static String bytecodeName(int bytecode) {
         if (!validBytecode(bytecode)) {
@@ -358,6 +364,10 @@ abstract class Icode {
                 return "DELPROP_SUPER";
             case Icode_SPREAD:
                 return "SPREAD";
+            case Icode_CALL_VARARGS:
+                return "CALL_VARARGS";
+            case Icode_CALL_VARARGS_ON_SUPER:
+                return "CALL_VARARGS_ON_SUPER";
         }
 
         // icode without name
