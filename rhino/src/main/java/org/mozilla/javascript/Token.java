@@ -26,7 +26,7 @@ public class Token {
     }
 
     // debug flags
-    public static final boolean printTrees = RhinoConfig.get("rhino.printTrees", false);
+    public static final boolean printTrees = RhinoConfig.get("rhino.printTrees", true);
     static boolean printICode = RhinoConfig.get("rhino.printICode", false);
     static boolean printNames = printTrees || printICode;
 

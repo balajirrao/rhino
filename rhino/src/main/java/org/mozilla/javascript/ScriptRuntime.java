@@ -5039,7 +5039,7 @@ public class ScriptRuntime {
                     if (isConst) {
                         ScriptableObject.defineConstProperty(varScope, name);
                     } else if (!evalScript) {
-                        if (desc.hasFunctionNamed(name)) {
+                        if (desc.hasNoFunctionStatementNamed(name)) {
                             // Global var definitions are supposed to be DONTDELETE
                             ScriptableObject.defineProperty(
                                     varScope, name, Undefined.instance, ScriptableObject.PERMANENT);
@@ -5464,9 +5464,7 @@ public class ScriptRuntime {
         } else if (type == FunctionNode.FUNCTION_EXPRESSION_STATEMENT) {
             String name = function.getFunctionName();
             if (name != null && name.length() != 0) {
-                // Always put function expression statements into initial
-                // activation object ignoring the with statement to follow
-                // SpiderMonkey
+                // Pre-ES6: always hoist to the enclosing function/script scope.
                 while (scope.isNestedScope()) {
                     scope = scope.getParentScope();
                 }
@@ -5475,9 +5473,17 @@ public class ScriptRuntime {
         } else if (type == FunctionNode.FUNCTION_BLOCK_SCOPED) {
             String name = function.getFunctionName();
             if (name != null && name.length() != 0) {
-                // Block-scoped function in strict mode: bind in the current
-                // (block) scope only, do not walk up to the activation object.
+                // Block-scoped function: bind in the current (block) scope.
                 scope.put(name, scope, function);
+                // ES2024, B.3.2.1: if annexB hoisted, also copy to the
+                // enclosing function/script scope (step c).
+                if (function.getDescriptor().isAnnexBHoisted()) {
+                    VarScope varScope = scope;
+                    while (varScope.isNestedScope()) {
+                        varScope = varScope.getParentScope();
+                    }
+                    varScope.put(name, varScope, function);
+                }
             }
         } else {
             throw Kit.codeBug();

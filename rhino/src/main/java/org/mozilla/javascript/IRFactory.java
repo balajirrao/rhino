@@ -531,13 +531,15 @@ public final class IRFactory {
             List<Node> functions = new ArrayList<>();
 
             for (Node kid : node) {
-                if (kid instanceof FunctionNode
-                        && ((FunctionNode) kid).getFunctionType()
-                                == FunctionNode.FUNCTION_EXPRESSION_STATEMENT) {
-                    functions.add(transform((AstNode) kid));
-                } else {
-                    kids.add(transform((AstNode) kid));
+                if (kid instanceof FunctionNode) {
+                    int fnType = ((FunctionNode) kid).getFunctionType();
+                    if (fnType == FunctionNode.FUNCTION_EXPRESSION_STATEMENT
+                            || fnType == FunctionNode.FUNCTION_BLOCK_SCOPED) {
+                        functions.add(transform((AstNode) kid));
+                        continue;
+                    }
                 }
+                kids.add(transform((AstNode) kid));
             }
             node.removeChildren();
 

@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import org.mozilla.javascript.ast.FunctionNode;
 import org.mozilla.javascript.debug.DebuggableScript;
 
 /**
@@ -31,6 +32,7 @@ public final class JSDescriptor<T extends ScriptOrFn<T>> implements Serializable
     private static final int REQUIRES_ARGUMENT_OBJECT_FLAG = 1 << 11;
     private static final int DECLARED_AS_FUNCTION_EXPRESSION_FLAG = 1 << 12;
     private static final int DERIVED_CONSTRUCTOR_FLAG = 1 << 13;
+    private static final int ANNEX_B_HOISTED_FLAG = 1 << 14;
 
     private final JSCode<T> code;
     private final JSCode<T> constructor;
@@ -81,6 +83,7 @@ public final class JSDescriptor<T extends ScriptOrFn<T>> implements Serializable
             boolean requiresArgumentObject,
             boolean declaredAsFunctionExpression,
             boolean derivedConstructor,
+            boolean annexBHoisted,
             SecurityController securityController,
             Object securityDomain,
             int functionType) {
@@ -105,6 +108,7 @@ public final class JSDescriptor<T extends ScriptOrFn<T>> implements Serializable
         flags = flags | (requiresArgumentObject ? REQUIRES_ARGUMENT_OBJECT_FLAG : 0);
         flags = flags | (declaredAsFunctionExpression ? DECLARED_AS_FUNCTION_EXPRESSION_FLAG : 0);
         flags = flags | (derivedConstructor ? DERIVED_CONSTRUCTOR_FLAG : 0);
+        flags = flags | (annexBHoisted ? ANNEX_B_HOISTED_FLAG : 0);
         this.flags = flags;
 
         this.sourceFile = sourceFile;
@@ -219,10 +223,10 @@ public final class JSDescriptor<T extends ScriptOrFn<T>> implements Serializable
         return (flags & HAS_DEFAULT_PARAMETERS_FLAG) != 0;
     }
 
-    public boolean hasFunctionNamed(String name) {
+    public boolean hasNoFunctionStatementNamed(String name) {
         for (int f = 0; f < getFunctionCount(); f++) {
             var functionData = getFunction(f);
-            if (!functionData.declaredAsFunctionExpression()
+            if (functionData.getFunctionType() == FunctionNode.FUNCTION_STATEMENT
                     && name.equals(functionData.getFunctionName())) {
                 return false;
             }
@@ -265,6 +269,10 @@ public final class JSDescriptor<T extends ScriptOrFn<T>> implements Serializable
 
     public boolean declaredAsFunctionExpression() {
         return (flags & DECLARED_AS_FUNCTION_EXPRESSION_FLAG) != 0;
+    }
+
+    public boolean isAnnexBHoisted() {
+        return (flags & ANNEX_B_HOISTED_FLAG) != 0;
     }
 
     public SecurityController getSecurityController() {
@@ -318,6 +326,7 @@ public final class JSDescriptor<T extends ScriptOrFn<T>> implements Serializable
         public boolean requiresActivationFrame;
         public boolean requiresArgumentObject;
         public boolean declaredAsFunctionExpression;
+        public boolean annexBHoisted;
         public SecurityController securityController;
         public Object securityDomain;
         public int functionType;
@@ -389,6 +398,7 @@ public final class JSDescriptor<T extends ScriptOrFn<T>> implements Serializable
                             requiresArgumentObject,
                             declaredAsFunctionExpression,
                             false,
+                            annexBHoisted,
                             securityController,
                             securityDomain,
                             functionType);

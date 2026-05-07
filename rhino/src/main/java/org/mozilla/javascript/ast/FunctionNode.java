@@ -119,6 +119,8 @@ public class FunctionNode extends ScriptNode {
     private boolean requiresArgumentObject;
     private boolean isGenerator;
     private boolean isES6Generator;
+    // ES2024, B.3.2.1: block-scoped function that should also be var-hoisted
+    private boolean annexBHoisted;
     private List<Node> generatorResumePoints;
     private Map<Node, int[]> liveLocals;
     private Node generatorParamInitBlock; // IR block for default parameters init in generators
@@ -297,6 +299,14 @@ public class FunctionNode extends ScriptNode {
 
     public void setRequiresActivation() {
         needsActivation = true;
+    }
+
+    public boolean isAnnexBHoisted() {
+        return annexBHoisted;
+    }
+
+    public void setAnnexBHoisted(boolean hoisted) {
+        this.annexBHoisted = hoisted;
     }
 
     public boolean requiresArgumentObject() {
